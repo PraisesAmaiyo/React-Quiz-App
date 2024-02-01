@@ -1,5 +1,9 @@
-function Footer() {
-  return <div></div>;
+function Footer({ children }) {
+  return (
+    <div>
+      <footer>{children}</footer>
+    </div>
+  );
 }
 
 export default Footer;
