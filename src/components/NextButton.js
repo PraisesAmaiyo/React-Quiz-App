@@ -1,5 +1,5 @@
-function NextButton({ dispatch, answer, index, numQuestions }) {
-  if (answer === null) return null;
+function NextButton({ dispatch, answer, index, numQuestions, points, status }) {
+  if (answer === null && status !== 'verify') return null;
 
   if (index < numQuestions - 1)
     return (

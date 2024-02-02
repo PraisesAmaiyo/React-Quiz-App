@@ -10,19 +10,23 @@ import Progress from './Progress';
 import FinishScreen from './FinishScreen';
 import Footer from './Footer';
 import Timer from './Timer';
+import PrevButton from './PrevButton';
 
 const SECS_PER_QUESTION = 30;
 
 const initialState = {
   questions: [],
+  filteredQuestions: [],
 
   // 'loading', 'error', 'ready', 'active', 'finished'
   status: 'loading',
   index: 0,
   answer: null,
+  answers: [],
   points: 0,
-  highscore: 0,
+  highscore: JSON.parse(localStorage.getItem('highscore')) ?? 0,
   secondsRemaining: null,
+  difficulty: 'all',
 };
 
 function reducer(state, action) {
@@ -32,39 +36,62 @@ function reducer(state, action) {
         ...state,
         questions: action.payload,
         status: 'ready',
+        filteredQuestions: action.payload,
       };
     case 'dataFailed':
       return {
         ...state,
         status: 'error',
       };
+
     case 'start':
       return {
         ...state,
         status: 'active',
-        secondsRemaining: state.questions.length * SECS_PER_QUESTION,
+        secondsRemaining: state.filteredQuestions.length * SECS_PER_QUESTION,
       };
     case 'newAnswer':
-      const question = state.questions.at(state.index);
+      const question = state.filteredQuestions.at(state.index);
 
       return {
         ...state,
         answer: action.payload,
+        answers: [...state.answers, action.payload],
         points:
           action.payload === question.correctOption
             ? state.points + question.points
             : state.points,
       };
+    case 'prevQuestion':
+      const index = state.index - 1 >= 0 ? state.index - 1 : state.index;
 
-    case 'nextQuestion':
-      return { ...state, index: state.index + 1, answer: null };
-
-    case 'finish':
       return {
         ...state,
+        index,
+        answer: state.answers.at(index) ? state.answers.at(index) : null,
+      };
+    case 'nextQuestion':
+      const iterator =
+        state.index + 1 < state.filteredQuestions.length
+          ? state.index + 1
+          : state.index;
+
+      return {
+        ...state,
+        index: iterator,
+        answer: state.answers.at(iterator) ? state.answers.at(iterator) : null,
+      };
+
+    case 'finish':
+      const highscore =
+        state.points >= state.highscore ? state.points : state.highscore;
+
+      localStorage.setItem('highscore', JSON.stringify(highscore));
+      return {
+        ...state,
+        index: 0,
         status: 'finished',
-        highscore:
-          state.points > state.highscore ? state.points : state.highscore,
+        highscore,
       };
 
     case 'restart':
@@ -72,7 +99,11 @@ function reducer(state, action) {
         ...initialState,
         status: 'ready',
         questions: state.questions,
+        filteredQuestions: state.filteredQuestions,
+        difficulty: state.difficulty,
+        highscore: state.highscore,
       };
+
     // return {
     //   ...state,
     //   status: 'ready',
@@ -88,6 +119,23 @@ function reducer(state, action) {
         status: state.secondsRemaining === 0 ? 'finished' : state.status,
       };
 
+    case 'reviewAnswers':
+      return { ...state, answer: state.answers[state.index], status: 'verify' };
+
+    case 'setDifficulty':
+      const newFilteredQuestions =
+        action.payload === 'all'
+          ? state.questions
+          : state.questions.filter(
+              (question) => question.points === parseInt(action.payload, 10)
+            );
+
+      return {
+        ...state,
+        difficulty: action.payload,
+        filteredQuestions: newFilteredQuestions,
+      };
+
     default:
       throw new Error('Action Unknown');
   }
@@ -95,11 +143,22 @@ function reducer(state, action) {
 
 export default function App() {
   const [
-    { questions, status, index, answer, points, highscore, secondsRemaining },
+    {
+      questions,
+      filteredQuestions,
+      status,
+      index,
+      answer,
+      points,
+      highscore,
+      secondsRemaining,
+      difficulty,
+    },
     dispatch,
   ] = useReducer(reducer, initialState);
 
-  const numQuestions = questions.length;
+  const numQuestions = filteredQuestions.length;
+
   const maxPossiblePoints = questions.reduce(
     (prev, cur) => prev + cur.points,
     0
@@ -108,7 +167,9 @@ export default function App() {
   useEffect(function () {
     fetch('http://localhost:8000/questions')
       .then((res) => res.json())
-      .then((data) => dispatch({ type: 'dataReceived', payload: data }))
+      .then((data) => {
+        dispatch({ type: 'dataReceived', payload: data });
+      })
       .catch((err) => dispatch({ type: 'dataFailed' }));
   }, []);
 
@@ -120,29 +181,50 @@ export default function App() {
         {status === 'loading' && <Loader />}
         {status === 'error' && <Error />}
         {status === 'ready' && (
-          <StartScreen numQuestions={numQuestions} dispatch={dispatch} />
+          <StartScreen
+            numQuestions={numQuestions}
+            dispatch={dispatch}
+            difficulty={difficulty}
+            highscore={highscore}
+          />
         )}
-        {status === 'active' && (
+        {(status === 'active' || status === 'verify') && (
           <>
             <Progress
               index={index}
-              numQuestions={numQuestions}
+              numQuestions={filteredQuestions.length}
               points={points}
               maxPossiblePoints={maxPossiblePoints}
               answer={answer}
             />
             <Question
-              question={questions[index]}
+              question={filteredQuestions.at(index)}
               dispatch={dispatch}
               answer={answer}
+              status={status}
             />
             <Footer>
-              <Timer dispatch={dispatch} secondsRemaining={secondsRemaining} />
+              {status !== 'verify' && (
+                <Timer
+                  dispatch={dispatch}
+                  secondsRemaining={secondsRemaining}
+                />
+              )}
+              {status === 'verify' && (
+                <PrevButton
+                  dispatch={dispatch}
+                  answer={answer}
+                  index={index}
+                  numQuestions={numQuestions}
+                />
+              )}
+
               <NextButton
                 dispatch={dispatch}
                 answer={answer}
                 index={index}
-                numQuestions={numQuestions}
+                numQuestions={filteredQuestions.length}
+                status={status}
               />
             </Footer>
           </>

@@ -1,5 +1,5 @@
-function Options({ question, dispatch, answer }) {
-  const hasAnswered = answer !== null;
+function Options({ question, dispatch, answer, status }) {
+  const hasAnswered = answer !== null || status === 'verify';
 
   return (
     <div>
