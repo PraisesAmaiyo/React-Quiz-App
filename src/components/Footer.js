@@ -1,7 +1,7 @@
 function Footer({ children }) {
   return (
     <div>
-      <footer>{children}</footer>
+      <footer className="btn-container">{children}</footer>
     </div>
   );
 }

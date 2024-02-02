@@ -115,6 +115,11 @@ progress {
   border-radius: 100px;
 }
 
+.btn-container {
+  display: flex;
+  justify-content: space-between;
+}
+
 .btn {
   display: block;
   font-family: inherit;

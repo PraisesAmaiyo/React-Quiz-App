@@ -165,7 +165,9 @@ export default function App() {
   );
 
   useEffect(function () {
-    fetch('http://localhost:8000/questions')
+    fetch(
+      'https://my-json-server.typicode.com/praisesamaiyo/react-quiz-app/questions/'
+    )
       .then((res) => res.json())
       .then((data) => {
         dispatch({ type: 'dataReceived', payload: data });
@@ -203,6 +205,7 @@ export default function App() {
               answer={answer}
               status={status}
             />
+
             <Footer>
               {status !== 'verify' && (
                 <Timer
