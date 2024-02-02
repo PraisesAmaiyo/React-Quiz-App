@@ -1,7 +1,7 @@
 # React Mini Quiz App
 This is a little fun project built with React's useReducer.
 
-Click on the link and take the mini fun quiz and see how far you scorre 🙃😂
+Click on the link, take the mini fun quiz, and see how far you score 🙃😂
 https://reactminiquiz.netlify.app/
 
 ![image](https://github.com/PraisesAmaiyo/React-Quiz-App/assets/130058029/2382556e-9d3f-4ae2-8c23-95196c85b5ee)
