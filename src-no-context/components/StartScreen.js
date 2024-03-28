@@ -1,8 +1,4 @@
-import { useQuiz } from '../contexts/QuizContext';
-
-function StartScreen() {
-  const { numQuestions, dispatch, difficulty, highscore } = useQuiz();
-
+function StartScreen({ numQuestions, dispatch, difficulty, highscore }) {
   return (
     <div className="start">
       <span className="highscore--start">Highscore: {highscore}</span>
